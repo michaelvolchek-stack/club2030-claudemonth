@@ -1,5 +1,5 @@
 import { searchTasks } from '@/lib/actions/tasks'
-import { TaskViewClient } from '@/components/TaskViewClient'
+import { SearchViewClient } from '@/components/SearchViewClient'
 
 export const dynamic = 'force-dynamic'
 
@@ -8,20 +8,8 @@ interface Props {
 }
 
 export default async function SearchPage({ searchParams }: Props) {
-  const query = searchParams.q ?? ''
+  const query = searchParams.q?.trim() ?? ''
   const tasks = query ? await searchTasks(query) : []
 
-  return (
-    <TaskViewClient
-      title={query ? `תוצאות עבור "${query}"` : 'חיפוש'}
-      sections={[
-        {
-          label: query ? `נמצאו ${tasks.length} תוצאות` : 'הקלד כדי לחפש',
-          tasks,
-          emptyMessage: query ? 'לא נמצאו תוצאות' : '',
-          labelVariant: 'muted',
-        },
-      ]}
-    />
-  )
+  return <SearchViewClient tasks={tasks} query={query} />
 }
