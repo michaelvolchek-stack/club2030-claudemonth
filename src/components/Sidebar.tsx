@@ -8,7 +8,7 @@ import { ProjectWithChildren } from '@/types'
 import { ProjectTree } from './ProjectTree'
 import { ProjectDialog } from './ProjectDialog'
 import { TagManager } from './TagManager'
-import { CalendarDays, CalendarRange, List, Search, Plus, Tags } from 'lucide-react'
+import { CalendarDays, CalendarRange, List, Search, Plus, Tags, X } from 'lucide-react'
 import { deleteProject } from '@/lib/actions/projects'
 import { toast } from 'sonner'
 import {
@@ -24,6 +24,7 @@ import {
 
 interface SidebarProps {
   projects: ProjectWithChildren[]
+  onClose?: () => void
 }
 
 type EditPayload = { id: string; name: string; color: string | null; parentId: string | null }
@@ -35,7 +36,7 @@ const NAV_ITEMS = [
   { href: '/search', label: 'חיפוש', icon: Search },
 ]
 
-export function Sidebar({ projects }: SidebarProps) {
+export function Sidebar({ projects, onClose }: SidebarProps) {
   const pathname = usePathname()
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editProject, setEditProject] = useState<EditPayload | undefined>(undefined)
@@ -71,8 +72,16 @@ export function Sidebar({ projects }: SidebarProps) {
     <>
       <aside className="w-60 shrink-0 border-l bg-muted/30 flex flex-col h-full">
         {/* Logo / App name */}
-        <div className="px-4 py-5 border-b">
+        <div className="px-4 py-5 border-b flex items-center justify-between">
           <h1 className="text-base font-semibold tracking-tight">📋 המשימות שלי</h1>
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="md:hidden p-1 rounded hover:bg-muted text-muted-foreground"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
         </div>
 
         {/* Main nav */}
@@ -81,6 +90,7 @@ export function Sidebar({ projects }: SidebarProps) {
             <Link
               key={href}
               href={href}
+              onClick={onClose}
               className={cn(
                 'flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium transition-colors',
                 pathname === href

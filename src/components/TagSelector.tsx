@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { getTags } from '@/lib/actions/tags'
-import { Tag, Plus, X, Loader2 } from 'lucide-react'
+import { Plus, X, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface TagOption {

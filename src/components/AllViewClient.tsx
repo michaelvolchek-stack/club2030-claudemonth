@@ -12,7 +12,6 @@ import {
   PRIORITY_LABELS,
   ProjectWithChildren,
   SortField,
-  SortDir,
 } from '@/types'
 import { TaskList } from './TaskList'
 import { TaskPanel } from './TaskPanel'

@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button'
 import { getTags, createTag, updateTag, deleteTag } from '@/lib/actions/tags'
 import { toast } from 'sonner'
 import { Pencil, Trash2, Check, X, Plus, Loader2 } from 'lucide-react'
-import { cn } from '@/lib/utils'
 
 const PRESET_COLORS = [
   '#ef4444', '#f97316', '#eab308', '#22c55e',

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useRef } from 'react'
 import { parseQuickAdd } from '@/lib/actions/quickAdd'
 import { createTask } from '@/lib/actions/tasks'
 import { getTags } from '@/lib/actions/tags'
@@ -8,15 +8,17 @@ import { getProjectTree } from '@/lib/actions/projects'
 import { toast } from 'sonner'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Plus, Loader2 } from 'lucide-react'
-import { PRIORITY_LABELS, QuickAddResult } from '@/types'
+import { Plus, Loader2, CalendarDays, CalendarCheck, Folder, Tag } from 'lucide-react'
+import { PRIORITY_LABELS, PRIORITY_COLORS, QuickAddResult, Priority } from '@/types'
 import { format } from 'date-fns'
 import { he } from 'date-fns/locale'
+import { cn } from '@/lib/utils'
 
 export function QuickAddBar() {
   const [value, setValue] = useState('')
   const [preview, setPreview] = useState<QuickAddResult | null>(null)
   const [isPending, startTransition] = useTransition()
+  const inputRef = useRef<HTMLInputElement>(null)
 
   async function handleChange(text: string) {
     setValue(text)
@@ -36,7 +38,7 @@ export function QuickAddBar() {
       try {
         const parsed = await parseQuickAdd(value)
 
-        // Resolve project ID if needed
+        // Resolve project ID
         let projectId: string | undefined
         if (parsed.projectName) {
           const tree = await getProjectTree()
@@ -61,13 +63,14 @@ export function QuickAddBar() {
           priority: parsed.priority,
           dueDate: parsed.dueDate ?? null,
           dueHasTime: parsed.dueHasTime,
+          plannedDate: parsed.plannedDate ?? null,
           projectId,
           tagIds,
         })
 
         setValue('')
         setPreview(null)
-        toast.success(`משימה נוספה: ${parsed.title}`)
+        toast.success(`✓ ${parsed.title}`)
       } catch (err) {
         toast.error('שגיאה ביצירת המשימה')
         console.error(err)
@@ -75,39 +78,78 @@ export function QuickAddBar() {
     })
   }
 
+  const showPreview = !!preview && value.trim().length > 2
+
   return (
     <div className="w-full">
       <form onSubmit={handleSubmit} className="flex gap-2">
         <Input
+          ref={inputRef}
+          data-quickadd
           value={value}
           onChange={e => handleChange(e.target.value)}
-          placeholder='הוסף משימה... למשל: "לפגוש יעל מחר בבוקר !1 #עבודה @פגישות"'
+          onKeyDown={e => e.key === 'Escape' && (setValue(''), setPreview(null))}
+          placeholder='הוסף משימה... למשל: "לפגוש יעל מחר !1 #עבודה @פגישות ~היום"'
           className="flex-1 text-sm"
           disabled={isPending}
           dir="rtl"
         />
         <Button type="submit" size="sm" disabled={!value.trim() || isPending}>
-          {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+          {isPending
+            ? <Loader2 className="h-4 w-4 animate-spin" />
+            : <Plus className="h-4 w-4" />}
           <span className="mr-1">הוסף</span>
         </Button>
       </form>
 
-      {/* Live preview */}
-      {preview && value.trim().length > 2 && (
-        <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground px-1">
+      {/* Live preview chips */}
+      {showPreview && preview && (
+        <div className="mt-2 flex flex-wrap items-center gap-1.5 px-1 text-xs">
+          {/* Title */}
           <span className="font-medium text-foreground">{preview.title}</span>
-          {preview.dueDate && (
-            <span>
-              📅{' '}
-              {preview.dueHasTime
-                ? format(preview.dueDate, "dd/MM בשעה HH:mm", { locale: he })
-                : format(preview.dueDate, 'dd/MM', { locale: he })}
+
+          {/* Priority (only if non-default) */}
+          {preview.priority !== Priority.MEDIUM && (
+            <span className={cn(
+              'inline-flex items-center px-1.5 py-0.5 rounded border font-medium',
+              PRIORITY_COLORS[preview.priority]
+            )}>
+              {PRIORITY_LABELS[preview.priority]}
             </span>
           )}
-          <span>⚡ {PRIORITY_LABELS[preview.priority]}</span>
-          {preview.projectName && <span>📁 {preview.projectName}</span>}
+
+          {/* Due date */}
+          {preview.dueDate && (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+              <CalendarDays className="h-3 w-3" />
+              {preview.dueHasTime
+                ? format(preview.dueDate, "dd/MM 'בשעה' HH:mm", { locale: he })
+                : format(preview.dueDate, 'dd/MM/yyyy', { locale: he })}
+            </span>
+          )}
+
+          {/* Planned date */}
+          {preview.plannedDate && (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200">
+              <CalendarCheck className="h-3 w-3" />
+              תכנון: {format(preview.plannedDate, 'dd/MM/yyyy', { locale: he })}
+            </span>
+          )}
+
+          {/* Project */}
+          {preview.projectName && (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-muted text-muted-foreground border">
+              <Folder className="h-3 w-3" />
+              {preview.projectName}
+            </span>
+          )}
+
+          {/* Tags */}
           {preview.tagNames.map(t => (
-            <span key={t}>🏷 {t}</span>
+            <span key={t} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-muted text-muted-foreground border">
+              <Tag className="h-3 w-3" />
+              {t}
+            </span>
           ))}
         </div>
       )}

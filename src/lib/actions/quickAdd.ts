@@ -221,7 +221,18 @@ export async function parseQuickAdd(text: string): Promise<QuickAddResult> {
   }
   remaining = remaining.replace(/@[֐-׿a-zA-Z0-9_-]+/g, '').trim()
 
-  // Extract date
+  // Extract planned date: ~keyword (e.g. ~היום, ~מחר)
+  // The ~ prefix marks the planned date (when to work on it), separate from due date
+  let plannedDate: Date | undefined
+  const plannedMatch = remaining.match(/~(\S+)/)
+  if (plannedMatch) {
+    const plannedText = plannedMatch[1]
+    const { date: pd } = parseDateFromText(plannedText)
+    if (pd) plannedDate = pd
+    remaining = remaining.replace(plannedMatch[0], '').trim()
+  }
+
+  // Extract due date from remaining text
   const { date, hasTime, remainingText } = parseDateFromText(remaining)
   remaining = remainingText
 
@@ -232,6 +243,7 @@ export async function parseQuickAdd(text: string): Promise<QuickAddResult> {
     title: title || text.trim(),
     dueDate: date,
     dueHasTime: hasTime,
+    plannedDate,
     priority,
     projectName,
     tagNames,

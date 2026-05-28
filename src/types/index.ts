@@ -65,6 +65,7 @@ export interface QuickAddResult {
   title: string
   dueDate?: Date
   dueHasTime: boolean
+  plannedDate?: Date      // ~מחר syntax → plan for today, due later
   priority: Priority
   projectName?: string
   tagNames: string[]
