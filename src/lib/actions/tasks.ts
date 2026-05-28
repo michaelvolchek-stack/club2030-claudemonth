@@ -321,17 +321,31 @@ export async function getWeekTasks() {
   today.setHours(0, 0, 0, 0)
   const endOfWeek = addDays(today, 7)
 
-  const tasks = await prisma.task.findMany({
-    where: {
-      dueDate: { gte: today, lt: endOfWeek },
-      status: { notIn: [TaskStatus.COMPLETED, TaskStatus.CANCELLED] },
-      parentTaskId: null,
-    },
-    include: TASK_INCLUDE,
-    orderBy: { dueDate: 'asc' },
-  })
+  const [thisWeek, overdue] = await Promise.all([
+    prisma.task.findMany({
+      where: {
+        dueDate: { gte: today, lt: endOfWeek },
+        status: { notIn: [TaskStatus.COMPLETED, TaskStatus.CANCELLED] },
+        parentTaskId: null,
+      },
+      include: TASK_INCLUDE,
+      orderBy: { dueDate: 'asc' },
+    }),
+    prisma.task.findMany({
+      where: {
+        dueDate: { lt: today },
+        status: { notIn: [TaskStatus.COMPLETED, TaskStatus.CANCELLED] },
+        parentTaskId: null,
+      },
+      include: TASK_INCLUDE,
+      orderBy: { dueDate: 'asc' },
+    }),
+  ])
 
-  return tasks as unknown as TaskWithRelations[]
+  return {
+    thisWeek: thisWeek as unknown as TaskWithRelations[],
+    overdue: overdue as unknown as TaskWithRelations[],
+  }
 }
 
 // ─── Search ───────────────────────────────────────────────────────────────────
