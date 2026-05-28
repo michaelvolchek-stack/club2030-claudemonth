@@ -23,6 +23,7 @@ import {
 import { Check, Plus, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { DateTimePicker } from './DateTimePicker'
+import { TagSelector } from './TagSelector'
 
 interface TaskPanelProps {
   task: TaskWithRelations | null
@@ -153,23 +154,23 @@ export function TaskPanel({ task, open, onClose }: TaskPanelProps) {
             />
           </div>
 
-          {/* Project & Tags */}
+          {/* Project */}
           {task.project && (
             <div className="flex items-center gap-2 text-sm">
-              <span className="text-muted-foreground">פרויקט:</span>
+              <span className="text-muted-foreground shrink-0">פרויקט:</span>
               <Badge variant="outline">{task.project.name}</Badge>
             </div>
           )}
 
-          {task.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {task.tags.map(({ tag }) => (
-                <Badge key={tag.id} variant="secondary">
-                  {tag.name}
-                </Badge>
-              ))}
-            </div>
-          )}
+          {/* Tags */}
+          <div className="flex items-start gap-2 text-sm">
+            <span className="text-muted-foreground shrink-0 pt-0.5">תגיות:</span>
+            <TagSelector
+              selectedTagIds={task.tags.map(({ tag }) => tag.id)}
+              onChange={tagIds => handleUpdate({ tagIds })}
+              disabled={isPending}
+            />
+          </div>
 
           {/* Description */}
           <div>

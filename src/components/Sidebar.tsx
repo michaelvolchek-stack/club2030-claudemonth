@@ -7,7 +7,8 @@ import { cn } from '@/lib/utils'
 import { ProjectWithChildren } from '@/types'
 import { ProjectTree } from './ProjectTree'
 import { ProjectDialog } from './ProjectDialog'
-import { CalendarDays, CalendarRange, List, Search, Plus } from 'lucide-react'
+import { TagManager } from './TagManager'
+import { CalendarDays, CalendarRange, List, Search, Plus, Tags } from 'lucide-react'
 import { deleteProject } from '@/lib/actions/projects'
 import { toast } from 'sonner'
 import {
@@ -39,6 +40,7 @@ export function Sidebar({ projects }: SidebarProps) {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editProject, setEditProject] = useState<EditPayload | undefined>(undefined)
   const [deletingProject, setDeletingProject] = useState<{ id: string; name: string } | null>(null)
+  const [tagManagerOpen, setTagManagerOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
 
   function openCreate() {
@@ -116,6 +118,17 @@ export function Sidebar({ projects }: SidebarProps) {
             onDelete={setDeletingProject}
           />
         </div>
+
+        {/* Tags section */}
+        <div className="px-4 py-3 border-t">
+          <button
+            onClick={() => setTagManagerOpen(true)}
+            className="flex items-center gap-2 w-full text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Tags className="h-4 w-4 shrink-0" />
+            ניהול תגיות
+          </button>
+        </div>
       </aside>
 
       {/* Create / Edit project dialog */}
@@ -125,6 +138,9 @@ export function Sidebar({ projects }: SidebarProps) {
         allProjects={projects}
         editProject={editProject}
       />
+
+      {/* Tag manager dialog */}
+      <TagManager open={tagManagerOpen} onClose={() => setTagManagerOpen(false)} />
 
       {/* Delete confirmation */}
       <AlertDialog open={!!deletingProject} onOpenChange={v => !v && setDeletingProject(null)}>
