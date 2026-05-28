@@ -11,7 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { TaskWithRelations, TaskStatus, Priority, STATUS_LABELS, PRIORITY_LABELS } from '@/types'
-import { updateTask, completeTask } from '@/lib/actions/tasks'
+import { updateTask, completeTask, deleteTask } from '@/lib/actions/tasks'
 import { addSubTask, toggleSubTask, deleteSubTask } from '@/lib/actions/subtasks'
 import { toast } from 'sonner'
 import {
@@ -20,7 +20,7 @@ import {
   SelectItem,
   SelectTrigger,
 } from '@/components/ui/select'
-import { Check, Plus, Trash2 } from 'lucide-react'
+import { Check, Plus, Trash2, AlertTriangle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { DateTimePicker } from './DateTimePicker'
 import { TagSelector } from './TagSelector'
@@ -36,6 +36,7 @@ export function TaskPanel({ task, open, onClose }: TaskPanelProps) {
   const [newSubTask, setNewSubTask] = useState('')
   const [status, setStatus] = useState<TaskStatus>(task?.status as TaskStatus ?? TaskStatus.ACTIVE)
   const [priority, setPriority] = useState<Priority>(task?.priority as Priority ?? Priority.MEDIUM)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   // Sync local state when task changes (intentionally depend only on id)
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -150,6 +151,17 @@ export function TaskPanel({ task, open, onClose }: TaskPanelProps) {
               value={task.dueDate ? new Date(task.dueDate) : null}
               hasTime={task.dueHasTime}
               onChange={(date, ht) => handleUpdate({ dueDate: date ?? undefined, dueHasTime: ht })}
+              placeholder="לא נקבע"
+            />
+          </div>
+
+          {/* Planned date */}
+          <div className="flex items-center gap-1 text-sm -mx-2">
+            <span className="text-muted-foreground px-2 shrink-0">תאריך תכנון:</span>
+            <DateTimePicker
+              value={task.plannedDate ? new Date(task.plannedDate) : null}
+              hasTime={false}
+              onChange={(date) => handleUpdate({ plannedDate: date ?? undefined })}
               placeholder="לא נקבע"
             />
           </div>
@@ -277,26 +289,65 @@ export function TaskPanel({ task, open, onClose }: TaskPanelProps) {
         </div>
 
         {/* Footer actions */}
-        <div className="px-6 py-4 border-t flex gap-2">
-          {task.status !== TaskStatus.COMPLETED && (
-            <Button
-              onClick={() => {
-                startTransition(async () => {
-                  await completeTask(task.id)
-                  toast.success('משימה הושלמה!')
-                  onClose()
-                })
-              }}
-              className="flex-1"
-              disabled={isPending}
-            >
-              <Check className="h-4 w-4 ml-2" />
-              סמן כהושלם
-            </Button>
+        <div className="px-6 py-4 border-t space-y-2">
+          {confirmDelete ? (
+            <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2">
+              <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />
+              <span className="text-sm flex-1">למחוק את המשימה לצמיתות?</span>
+              <Button
+                size="sm"
+                variant="destructive"
+                disabled={isPending}
+                className="h-7 px-2 text-xs"
+                onClick={() => {
+                  startTransition(async () => {
+                    await deleteTask(task.id)
+                    toast.success('משימה נמחקה')
+                    onClose()
+                  })
+                }}
+              >
+                מחק
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 px-2 text-xs"
+                onClick={() => setConfirmDelete(false)}
+              >
+                ביטול
+              </Button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              {task.status !== TaskStatus.COMPLETED && (
+                <Button
+                  onClick={() => {
+                    startTransition(async () => {
+                      await completeTask(task.id)
+                      toast.success('משימה הושלמה!')
+                      onClose()
+                    })
+                  }}
+                  className="flex-1"
+                  disabled={isPending}
+                >
+                  <Check className="h-4 w-4 ml-2" />
+                  סמן כהושלם
+                </Button>
+              )}
+              <Button variant="outline" onClick={onClose}>סגור</Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setConfirmDelete(true)}
+                className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                title="מחק משימה"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
           )}
-          <Button variant="outline" onClick={onClose}>
-            סגור
-          </Button>
         </div>
       </SheetContent>
     </Sheet>

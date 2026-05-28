@@ -16,9 +16,10 @@ interface Section {
 interface TaskViewClientProps {
   sections: Section[]
   title: string
+  hideTitleBar?: boolean
 }
 
-export function TaskViewClient({ sections, title }: TaskViewClientProps) {
+export function TaskViewClient({ sections, title, hideTitleBar }: TaskViewClientProps) {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
 
   // Always derive the current task from fresh server data
@@ -34,9 +35,11 @@ export function TaskViewClient({ sections, title }: TaskViewClientProps) {
   return (
     <div className="max-w-3xl mx-auto px-6 py-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">{title}</h2>
-      </div>
+      {!hideTitleBar && (
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold">{title}</h2>
+        </div>
+      )}
 
       {/* Quick Add */}
       <QuickAddBar />
