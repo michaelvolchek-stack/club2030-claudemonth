@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition, useEffect } from 'react'
+import React, { useState, useTransition, useEffect } from 'react'
 import { format } from 'date-fns'
 import { he } from 'date-fns/locale'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { TaskWithRelations, TaskStatus, Priority, STATUS_LABELS, PRIORITY_LABELS } from '@/types'
+import { TaskWithRelations, TaskStatus, Priority, STATUS_LABELS, PRIORITY_LABELS, HistoryItem } from '@/types'
 import { updateTask, completeTask, deleteTask } from '@/lib/actions/tasks'
 import { addSubTask, toggleSubTask, deleteSubTask } from '@/lib/actions/subtasks'
 import { toast } from 'sonner'
@@ -257,35 +257,56 @@ export function TaskPanel({ task, open, onClose }: TaskPanelProps) {
 
           <Separator />
 
-          {/* History */}
-          {task.history.length > 0 && (
-            <div>
-              <label className="text-xs font-medium text-muted-foreground block mb-2">
-                היסטוריה
-              </label>
-              <div className="space-y-2 max-h-48 overflow-y-auto">
-                {task.history.map(h => (
-                  <div key={h.id} className="flex gap-2 text-xs">
-                    <span className="text-muted-foreground shrink-0">
-                      {format(new Date(h.changedAt), 'dd/MM HH:mm', { locale: he })}
-                    </span>
-                    <span>
-                      <span className="font-medium">{h.field}</span>:{' '}
-                      {h.oldValue ? (
-                        <>
-                          <span className="line-through text-muted-foreground">
-                            {formatHistoryValue(h.oldValue)}
-                          </span>{' '}
-                          →{' '}
-                        </>
-                      ) : null}
-                      <span>{formatHistoryValue(h.newValue ?? '')}</span>
-                    </span>
+          {/* History timeline */}
+          <div>
+            <label className="text-xs font-medium text-muted-foreground block mb-3">
+              היסטוריית שינויים
+            </label>
+
+            <div className="max-h-72 overflow-y-auto">
+              {task.history.map((h) => (
+                <div key={h.id} className="flex gap-3">
+                  {/* dot + line column (appears on the right in RTL) */}
+                  <div className="flex flex-col items-center shrink-0 w-4">
+                    <div className={cn(
+                      'w-2.5 h-2.5 rounded-full mt-1 shrink-0 border-2',
+                      h.field === 'status'
+                        ? 'bg-blue-100 border-blue-400'
+                        : h.field === 'priority'
+                        ? 'bg-orange-100 border-orange-400'
+                        : 'bg-muted border-muted-foreground/40'
+                    )} />
+                    <div className="w-px flex-1 bg-border/60 mt-1" />
                   </div>
-                ))}
+
+                  {/* content */}
+                  <div className="flex-1 pb-3 min-w-0">
+                    <div className="text-xs text-muted-foreground">
+                      {format(new Date(h.changedAt), "d בMMM, HH:mm", { locale: he })}
+                    </div>
+                    <div className="text-sm mt-0.5">
+                      {formatHistoryEntry(h)}
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {/* "created" sentinel — always last */}
+              <div className="flex gap-3">
+                <div className="flex flex-col items-center shrink-0 w-4">
+                  <div className="w-2.5 h-2.5 rounded-full mt-1 shrink-0 border-2 bg-primary/10 border-primary/50" />
+                </div>
+                <div className="flex-1 pb-1">
+                  <div className="text-xs text-muted-foreground">
+                    {format(new Date(task.createdAt), "d בMMM yyyy, HH:mm", { locale: he })}
+                  </div>
+                  <div className="text-sm mt-0.5 text-muted-foreground">
+                    משימה נוצרה
+                  </div>
+                </div>
               </div>
             </div>
-          )}
+          </div>
         </div>
 
         {/* Footer actions */}
@@ -354,12 +375,62 @@ export function TaskPanel({ task, open, onClose }: TaskPanelProps) {
   )
 }
 
-function formatHistoryValue(val: string) {
-  try {
-    const parsed = JSON.parse(val)
-    if (typeof parsed === 'string') return parsed
-    return val
-  } catch {
-    return val
+// ─── History helpers ─────────────────────────────────────────────────────────
+
+const FIELD_LABELS: Record<string, string> = {
+  title:        'כותרת',
+  description:  'תיאור',
+  status:       'סטטוס',
+  priority:     'עדיפות',
+  dueDate:      'תאריך יעד',
+  plannedDate:  'תאריך תכנון',
+  dueHasTime:   'כולל שעה',
+  isRecurring:  'משימה חוזרת',
+  projectId:    'פרויקט',
+  recurringRule:'כלל חזרה',
+}
+
+function parseVal(field: string, raw: string | null): string {
+  if (raw === null || raw === 'null') return '—'
+  let val: unknown
+  try { val = JSON.parse(raw) } catch { val = raw }
+
+  if (field === 'status' && typeof val === 'string')
+    return STATUS_LABELS[val as TaskStatus] ?? val
+  if (field === 'priority' && typeof val === 'string')
+    return PRIORITY_LABELS[val as Priority] ?? val
+  if ((field === 'dueDate' || field === 'plannedDate') && typeof val === 'string') {
+    try { return format(new Date(val), "d בMMM yyyy", { locale: he }) } catch { return val }
   }
+  if (field === 'isRecurring' || field === 'dueHasTime')
+    return val ? 'כן' : 'לא'
+  if (field === 'projectId')
+    return val ? 'שויך לפרויקט' : 'הוסר מפרויקט'
+  if (typeof val === 'string' && val.length > 50)
+    return val.slice(0, 50) + '…'
+  return String(val ?? '—')
+}
+
+function formatHistoryEntry(h: HistoryItem): React.ReactNode {
+  const label = FIELD_LABELS[h.field] ?? h.field
+  const newVal = parseVal(h.field, h.newValue)
+
+  if (h.oldValue === null || h.oldValue === 'null') {
+    return (
+      <>
+        <span className="text-muted-foreground">{label}:</span>{' '}
+        <span className="font-medium">{newVal}</span>
+      </>
+    )
+  }
+
+  const oldVal = parseVal(h.field, h.oldValue)
+  return (
+    <>
+      <span className="text-muted-foreground">{label}:</span>{' '}
+      <span className="line-through text-muted-foreground/60 text-xs">{oldVal}</span>
+      {' → '}
+      <span className="font-medium">{newVal}</span>
+    </>
+  )
 }
