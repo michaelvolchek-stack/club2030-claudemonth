@@ -10,8 +10,6 @@ import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { PriorityBadge } from './PriorityBadge'
-import { StatusBadge } from './StatusBadge'
 import { TaskWithRelations, TaskStatus, Priority, STATUS_LABELS, PRIORITY_LABELS } from '@/types'
 import { updateTask, completeTask } from '@/lib/actions/tasks'
 import { addSubTask, toggleSubTask, deleteSubTask } from '@/lib/actions/subtasks'
@@ -21,10 +19,10 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from '@/components/ui/select'
-import { Check, Plus, Trash2, RotateCcw, Clock } from 'lucide-react'
+import { Check, Plus, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { DateTimePicker } from './DateTimePicker'
 
 interface TaskPanelProps {
   task: TaskWithRelations | null
@@ -38,7 +36,8 @@ export function TaskPanel({ task, open, onClose }: TaskPanelProps) {
   const [status, setStatus] = useState<TaskStatus>(task?.status as TaskStatus ?? TaskStatus.ACTIVE)
   const [priority, setPriority] = useState<Priority>(task?.priority as Priority ?? Priority.MEDIUM)
 
-  // Sync local state when task changes
+  // Sync local state when task changes (intentionally depend only on id)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (task) {
       setStatus(task.status as TaskStatus)
@@ -144,18 +143,14 @@ export function TaskPanel({ task, open, onClose }: TaskPanelProps) {
           </div>
 
           {/* Due date */}
-          <div className="flex items-center gap-2 text-sm">
-            <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
-            <span className="text-muted-foreground">תאריך יעד:</span>
-            {task.dueDate ? (
-              <span>
-                {task.dueHasTime
-                  ? format(new Date(task.dueDate), "dd/MM/yyyy בשעה HH:mm", { locale: he })
-                  : format(new Date(task.dueDate), 'dd/MM/yyyy', { locale: he })}
-              </span>
-            ) : (
-              <span className="text-muted-foreground">לא נקבע</span>
-            )}
+          <div className="flex items-center gap-1 text-sm -mx-2">
+            <span className="text-muted-foreground px-2 shrink-0">תאריך יעד:</span>
+            <DateTimePicker
+              value={task.dueDate ? new Date(task.dueDate) : null}
+              hasTime={task.dueHasTime}
+              onChange={(date, ht) => handleUpdate({ dueDate: date ?? undefined, dueHasTime: ht })}
+              placeholder="לא נקבע"
+            />
           </div>
 
           {/* Project & Tags */}
