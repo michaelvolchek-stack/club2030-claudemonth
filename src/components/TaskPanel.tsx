@@ -24,6 +24,7 @@ import { Check, Plus, Trash2, AlertTriangle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { DateTimePicker } from './DateTimePicker'
 import { TagSelector } from './TagSelector'
+import { RecurringEditor } from './RecurringEditor'
 
 interface TaskPanelProps {
   task: TaskWithRelations | null
@@ -202,6 +203,20 @@ export function TaskPanel({ task, open, onClose }: TaskPanelProps) {
               }}
             />
           </div>
+
+          {/* Recurring */}
+          <RecurringEditor
+            key={task.id}
+            isRecurring={task.isRecurring}
+            recurringRule={task.recurringRule}
+            onChange={(isRecurring, rule) =>
+              handleUpdate({
+                isRecurring,
+                recurringRule: rule ? JSON.stringify(rule) : undefined,
+              })
+            }
+            disabled={isPending}
+          />
 
           <Separator />
 
@@ -409,6 +424,14 @@ function parseVal(field: string, raw: string | null): string {
     return val ? 'כן' : 'לא'
   if (field === 'projectId')
     return val ? 'שויך לפרויקט' : 'הוסר מפרויקט'
+  if (field === 'recurringRule' && typeof val === 'string') {
+    try {
+      const r = JSON.parse(val) as { freq: string; interval?: number }
+      const freqHe: Record<string, string> = { daily: 'יומי', weekly: 'שבועי', monthly: 'חודשי' }
+      const iv = r.interval && r.interval > 1 ? `כל ${r.interval} ` : 'כל '
+      return iv + (freqHe[r.freq] ?? r.freq)
+    } catch { /* fall through */ }
+  }
   if (typeof val === 'string' && val.length > 50)
     return val.slice(0, 50) + '…'
   return String(val ?? '—')
