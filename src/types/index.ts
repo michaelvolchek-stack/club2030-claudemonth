@@ -86,6 +86,7 @@ export interface TaskWithRelations {
   recurringRule: string | null
   projectId: string | null
   parentTaskId: string | null
+  order: number
   createdAt: Date
   updatedAt: Date
   project: { id: string; name: string; color: string | null } | null
@@ -132,7 +133,7 @@ export interface TaskFilters {
   search?: string
 }
 
-export type SortField = 'dueDate' | 'priority' | 'createdAt' | 'title'
+export type SortField = 'dueDate' | 'priority' | 'createdAt' | 'title' | 'order'
 export type SortDir = 'asc' | 'desc'
 
 export interface TaskSort {

@@ -37,6 +37,7 @@ const SORT_LABELS: Record<SortField, string> = {
   priority: 'עדיפות',
   createdAt: 'תאריך יצירה',
   title: 'כותרת',
+  order: 'סדר ידני',
 }
 
 const STATUS_OPTIONS = [TaskStatus.ACTIVE, TaskStatus.DRAFT, TaskStatus.COMPLETED, TaskStatus.CANCELLED]

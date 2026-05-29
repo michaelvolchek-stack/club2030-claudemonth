@@ -238,17 +238,19 @@ export async function getTasks(
     ]
   }
 
-  const orderBy: Record<string, string> = {}
+  const orderByArr: Record<string, string>[] = []
   if (sort.field === 'priority') {
-    // Custom priority ordering via raw is complex; sort in JS
-    orderBy.createdAt = sort.dir
+    // Custom priority ordering via raw is complex; sort in JS after fetch
+    orderByArr.push({ createdAt: sort.dir })
+  } else if (sort.field === 'order') {
+    orderByArr.push({ order: sort.dir }, { createdAt: 'asc' })
   } else {
-    orderBy[sort.field] = sort.dir
+    orderByArr.push({ [sort.field]: sort.dir })
   }
 
   const tasks = await prisma.task.findMany({
     where,
-    orderBy,
+    orderBy: orderByArr,
     include: TASK_INCLUDE,
   })
 
@@ -274,7 +276,7 @@ export async function getTodayTasks() {
   tomorrow.setDate(tomorrow.getDate() + 1)
 
   const [planned, dueToday, overdue] = await Promise.all([
-    // Planned for today
+    // Planned for today — sorted by manual order, then creation date
     prisma.task.findMany({
       where: {
         plannedDate: { gte: today, lt: tomorrow },
@@ -282,9 +284,9 @@ export async function getTodayTasks() {
         parentTaskId: null,
       },
       include: TASK_INCLUDE,
-      orderBy: { priority: 'asc' },
+      orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
     }),
-    // Due today (not planned)
+    // Due today (not planned) — sorted by manual order, then due time
     prisma.task.findMany({
       where: {
         dueDate: { gte: today, lt: tomorrow },
@@ -293,7 +295,7 @@ export async function getTodayTasks() {
         parentTaskId: null,
       },
       include: TASK_INCLUDE,
-      orderBy: { dueDate: 'asc' },
+      orderBy: [{ order: 'asc' }, { dueDate: 'asc' }],
     }),
     // Overdue
     prisma.task.findMany({
@@ -346,6 +348,20 @@ export async function getWeekTasks() {
     thisWeek: thisWeek as unknown as TaskWithRelations[],
     overdue: overdue as unknown as TaskWithRelations[],
   }
+}
+
+// ─── Reorder ──────────────────────────────────────────────────────────────────
+
+export async function reorderTasks(ids: string[], projectId?: string): Promise<void> {
+  await prisma.$transaction(
+    ids.map((id, index) =>
+      prisma.task.update({ where: { id }, data: { order: index } })
+    )
+  )
+  revalidatePath('/today')
+  revalidatePath('/week')
+  revalidatePath('/all')
+  if (projectId) revalidatePath(`/project/${projectId}`)
 }
 
 // ─── Search ───────────────────────────────────────────────────────────────────

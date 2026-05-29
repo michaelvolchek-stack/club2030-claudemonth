@@ -14,6 +14,7 @@ import {
   ChevronDown,
   RotateCcw,
   Clock,
+  GripVertical,
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -26,9 +27,13 @@ import {
 interface TaskItemProps {
   task: TaskWithRelations
   onOpen?: (task: TaskWithRelations) => void
+  /** Spread onto the drag-handle div when the list is sortable */
+  dragHandleProps?: Record<string, unknown>
+  /** True while this item is being actively dragged (ghost effect) */
+  isDragging?: boolean
 }
 
-export function TaskItem({ task, onOpen }: TaskItemProps) {
+export function TaskItem({ task, onOpen, dragHandleProps, isDragging }: TaskItemProps) {
   const [loading, setLoading] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const isCompleted = task.status === TaskStatus.COMPLETED
@@ -91,10 +96,22 @@ export function TaskItem({ task, onOpen }: TaskItemProps) {
         'group flex items-start gap-3 px-4 py-3 border-b last:border-b-0',
         'hover:bg-muted/40 transition-colors cursor-pointer',
         isCompleted && 'opacity-60',
-        loading && 'pointer-events-none opacity-50'
+        loading && 'pointer-events-none opacity-50',
+        isDragging && 'opacity-40 bg-muted/60',
       )}
       onClick={() => onOpen?.(task)}
     >
+      {/* Drag handle — only shown when list is sortable */}
+      {dragHandleProps && (
+        <div
+          {...(dragHandleProps as React.HTMLAttributes<HTMLDivElement>)}
+          className="opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing p-0.5 mt-0.5 shrink-0 text-muted-foreground/40 hover:text-muted-foreground touch-none"
+          onClick={e => e.stopPropagation()}
+        >
+          <GripVertical className="h-4 w-4" />
+        </div>
+      )}
+
       {/* Complete button */}
       <button
         onClick={e => {

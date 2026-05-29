@@ -12,6 +12,7 @@ export default async function TodayPage() {
     tasks: TaskWithRelations[]
     emptyMessage?: string
     labelVariant?: 'default' | 'overdue' | 'muted'
+    sortable?: boolean
   }
 
   const sections: Section[] = [
@@ -20,12 +21,14 @@ export default async function TodayPage() {
       tasks: planned,
       emptyMessage: 'אין משימות מתוכננות להיום',
       labelVariant: 'default',
+      sortable: true,
     },
     {
       label: 'תאריך יעד היום',
       tasks: dueToday,
       emptyMessage: 'אין משימות עם יעד להיום',
       labelVariant: 'muted',
+      sortable: true,
     },
     ...(overdue.length > 0
       ? [{ label: 'באיחור', tasks: overdue, emptyMessage: '', labelVariant: 'overdue' as const }]

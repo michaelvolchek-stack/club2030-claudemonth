@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react'
 import { TaskWithRelations } from '@/types'
 import { TaskList } from './TaskList'
+import { SortableTaskList } from './SortableTaskList'
 import { TaskPanel } from './TaskPanel'
 import { QuickAddBar } from './QuickAddBar'
 
@@ -11,6 +12,8 @@ interface Section {
   tasks: TaskWithRelations[]
   emptyMessage?: string
   labelVariant?: 'default' | 'overdue' | 'muted'
+  /** Enable drag-and-drop manual ordering for this section */
+  sortable?: boolean
 }
 
 interface TaskViewClientProps {
@@ -61,11 +64,19 @@ export function TaskViewClient({ sections, title, hideTitleBar }: TaskViewClient
               ({section.tasks.length})
             </span>
           </h3>
-          <TaskList
-            tasks={section.tasks}
-            onOpen={t => setSelectedTaskId(t.id)}
-            emptyMessage={section.emptyMessage}
-          />
+          {section.sortable ? (
+            <SortableTaskList
+              tasks={section.tasks}
+              onOpen={t => setSelectedTaskId(t.id)}
+              emptyMessage={section.emptyMessage}
+            />
+          ) : (
+            <TaskList
+              tasks={section.tasks}
+              onOpen={t => setSelectedTaskId(t.id)}
+              emptyMessage={section.emptyMessage}
+            />
+          )}
         </div>
       ))}
 

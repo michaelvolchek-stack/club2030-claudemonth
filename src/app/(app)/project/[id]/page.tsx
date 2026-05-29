@@ -30,7 +30,7 @@ export default async function ProjectPage({ params }: Props) {
 
   const taskGroups = await Promise.all(
     allProjectIds.map(pid =>
-      getTasks({ projectId: pid, status: allStatuses }, { field: 'dueDate', dir: 'asc' })
+      getTasks({ projectId: pid, status: allStatuses }, { field: 'order', dir: 'asc' })
     )
   )
 
@@ -41,12 +41,14 @@ export default async function ProjectPage({ params }: Props) {
       tasks: taskGroups[0],
       emptyMessage: 'אין משימות פעילות בפרויקט זה',
       labelVariant: 'default' as const,
+      sortable: true,
     },
     ...project.children.map((child, i) => ({
       label: child.name,
       tasks: taskGroups[i + 1],
       emptyMessage: '',
       labelVariant: 'muted' as const,
+      sortable: true,
     })).filter((_, i) => taskGroups[i + 1]?.length > 0),
   ]
 
