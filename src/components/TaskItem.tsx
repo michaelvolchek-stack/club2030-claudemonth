@@ -30,6 +30,7 @@ interface TaskItemProps {
 
 export function TaskItem({ task, onOpen }: TaskItemProps) {
   const [loading, setLoading] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const isCompleted = task.status === TaskStatus.COMPLETED
   const isCancelled = task.status === TaskStatus.CANCELLED
 
@@ -101,13 +102,17 @@ export function TaskItem({ task, onOpen }: TaskItemProps) {
           if (!isCompleted) handleComplete()
         }}
         className={cn(
-          'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors',
+          'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-150',
           isCompleted
             ? 'border-green-500 bg-green-500 text-white'
-            : 'border-muted-foreground/40 hover:border-green-500 hover:bg-green-50'
+            : 'border-muted-foreground/40 group-hover:border-green-400 group-hover:bg-green-50'
         )}
+        title={isCompleted ? 'הושלם' : 'סמן כהושלם'}
       >
-        {isCompleted && <Check className="h-3 w-3" />}
+        {isCompleted
+          ? <Check className="h-3 w-3" />
+          : <Check className="h-3 w-3 text-green-500 opacity-0 group-hover:opacity-50 transition-opacity duration-150" />
+        }
       </button>
 
       {/* Content */}
@@ -115,6 +120,12 @@ export function TaskItem({ task, onOpen }: TaskItemProps) {
         <p className={cn('text-sm font-medium truncate', isCompleted && 'line-through')}>
           {task.title}
         </p>
+
+        {task.description && !isCompleted && (
+          <p className="mt-0.5 text-xs text-muted-foreground truncate leading-snug">
+            {task.description}
+          </p>
+        )}
 
         <div className="mt-1 flex flex-wrap items-center gap-2">
           <PriorityBadge priority={task.priority} />
@@ -166,7 +177,7 @@ export function TaskItem({ task, onOpen }: TaskItemProps) {
       {/* Hover actions */}
       <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 shrink-0">
         {/* Priority dropdown */}
-        <DropdownMenu>
+        <DropdownMenu onOpenChange={open => !open && setConfirmDelete(false)}>
           <DropdownMenuTrigger onClick={e => e.stopPropagation()} className="p-1 rounded hover:bg-muted text-muted-foreground inline-flex items-center">
             <ChevronDown className="h-4 w-4" />
           </DropdownMenuTrigger>
@@ -177,16 +188,30 @@ export function TaskItem({ task, onOpen }: TaskItemProps) {
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="text-destructive"
-              onClick={e => {
-                e.stopPropagation()
-                handleDelete()
-              }}
-            >
-              <Trash2 className="h-4 w-4 ml-2" />
-              מחק
-            </DropdownMenuItem>
+            {confirmDelete ? (
+              <DropdownMenuItem
+                className="text-destructive bg-destructive/5 font-medium"
+                onClick={e => {
+                  e.stopPropagation()
+                  handleDelete()
+                  setConfirmDelete(false)
+                }}
+              >
+                <Trash2 className="h-4 w-4 ml-2" />
+                אשר מחיקה
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem
+                className="text-destructive"
+                onClick={e => {
+                  e.stopPropagation()
+                  setConfirmDelete(true)
+                }}
+              >
+                <Trash2 className="h-4 w-4 ml-2" />
+                מחק
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

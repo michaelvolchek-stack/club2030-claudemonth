@@ -100,6 +100,9 @@ export function TaskPanel({ task, open, onClose }: TaskPanelProps) {
               onBlur={e => {
                 if (e.target.value !== task.title) handleUpdate({ title: e.target.value })
               }}
+              onKeyDown={e => {
+                if (e.key === 'Enter') e.currentTarget.blur()
+              }}
             />
           </div>
 
