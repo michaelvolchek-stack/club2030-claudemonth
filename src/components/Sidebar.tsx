@@ -8,7 +8,7 @@ import { ProjectWithChildren } from '@/types'
 import { ProjectTree } from './ProjectTree'
 import { ProjectDialog } from './ProjectDialog'
 import { TagManager } from './TagManager'
-import { CalendarDays, CalendarRange, List, Search, Plus, Tags, X } from 'lucide-react'
+import { CalendarDays, CalendarRange, List, Search, Plus, Tags, X, BarChart2 } from 'lucide-react'
 import { deleteProject } from '@/lib/actions/projects'
 import { toast } from 'sonner'
 import {
@@ -34,6 +34,7 @@ const NAV_ITEMS = [
   { href: '/week', label: 'השבוע', icon: CalendarRange },
   { href: '/all', label: 'הכל', icon: List },
   { href: '/search', label: 'חיפוש', icon: Search },
+  { href: '/dashboard', label: 'סקירה', icon: BarChart2 },
 ]
 
 export function Sidebar({ projects, onClose }: SidebarProps) {
