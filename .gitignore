@@ -36,6 +36,10 @@ prisma/*.db-journal
 # vercel
 .vercel
 
+# Obsidian local UI state
+.obsidian/workspace.json
+Vault/.obsidian/workspace.json
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
