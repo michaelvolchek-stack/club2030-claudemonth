@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -rc '(.tool_input.file_path // .tool_response.filePath // \"\") as $f | if ($f|test(\"/src/|/prisma/\")) then {hookSpecificOutput:{hookEventName:\"PostToolUse\",additionalContext:(\"קובץ מקור עודכן: \" + $f + \" — אם השינוי משפיע על הארכיטקטורה, מודל הנתונים, הרכיבים, ה-Server Actions או הפיצרים, עדכן את ה-note המתאים תחת Vault/ כדי לשמור על סנכרון התיעוד.\")}} else empty end' 2>/dev/null || true",
+            "statusMessage": "בודק אם צריך לעדכן את ה-Vault"
+          }
+        ]
+      }
+    ]
+  }
+}
