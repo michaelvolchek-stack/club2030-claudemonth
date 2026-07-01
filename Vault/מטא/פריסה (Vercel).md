@@ -64,6 +64,7 @@ tags:
 | `GREEN_API_BASE_URL` | אופציונלי (ברירת מחדל `https://api.green-api.com`) |
 | `CRON_SECRET` | ידני — מפעיל את הגנת ה-cron |
 | `WHATSAPP_WEBHOOK_TOKEN` | ידני — **חובה** להפעלת ה-webhook (בלעדיו 503) |
+| `WHATSAPP_GROUP_CHAT_ID` | אופציונלי — שיחה דו-כיוונית על מספר יחיד דרך קבוצה (`…@g.us`). ראה [[וואטסאפ (Green API)]] |
 | `ANTHROPIC_API_KEY` | ידני — שיחה חופשית עם Claude (חסר → fallback מילות מפתח) |
 | `ANTHROPIC_MODEL` | אופציונלי (ברירת מחדל `claude-haiku-4-5-20251001`) |
 

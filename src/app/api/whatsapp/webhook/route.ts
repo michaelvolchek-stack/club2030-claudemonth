@@ -60,13 +60,32 @@ export async function POST(req: Request) {
   }
 
   const chatId = payload.senderData?.chatId ?? ''
+  const sender = payload.senderData?.sender ?? ''
   const text = extractText(payload)
   const { chatId: ownerChatId } = greenApiConfig()
+  const groupChatId = process.env.WHATSAPP_GROUP_CHAT_ID
 
-  // Security layer 2 — sender/chat verification. Single-user app: only act on
-  // the configured owner number. For incoming this is the sender; for self-chat
-  // outgoing this is the (self) recipient — both surface as senderData.chatId.
-  if (!ownerChatId || chatId !== ownerChatId) {
+  // Security layer 2 — sender/chat verification. Single-user app, two supported
+  // topologies (both scope strictly to the owner):
+  //   (a) Direct chat — senderData.chatId is the owner's own number (@c.us).
+  //       Used by dedicated-number setups and by incoming messages.
+  //   (b) Dedicated group (WHATSAPP_GROUP_CHAT_ID) whose only human is the owner
+  //       — senderData.chatId is the group (@g.us) and senderData.sender is the
+  //       owner. This is how a SINGLE number does two-way chat: WhatsApp's
+  //       "Message Yourself" chat never fires a webhook, but a real group the
+  //       owner types in does (outgoingMessageReceived). The bot replies into
+  //       the same group; its own API replies arrive as
+  //       outgoingAPIMessageReceived and are filtered above, so no loop.
+  const isOwnerDirect = Boolean(ownerChatId) && chatId === ownerChatId
+  const isOwnerGroup =
+    Boolean(groupChatId) && chatId === groupChatId && sender === ownerChatId
+  if (!isOwnerDirect && !isOwnerGroup) {
+    // Not secret — helps read the group id from logs during first-time setup.
+    console.log('WhatsApp ignored (not_owner):', {
+      chatId,
+      sender,
+      type: payload.typeWebhook,
+    })
     return NextResponse.json({ ok: true, ignored: 'not_owner' })
   }
   if (!text) return NextResponse.json({ ok: true, ignored: 'no_text' })

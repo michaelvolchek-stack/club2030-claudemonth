@@ -61,6 +61,7 @@ flowchart TD
 | `MY_WHATSAPP_CHAT_ID` | chat id של הבעלים, פורמט `972XXXXXXXXX@c.us` |
 | `CRON_SECRET` | סוד המגן על route הדייג'סט |
 | `WHATSAPP_WEBHOOK_TOKEN` | **חובה** — סוד ב-URL של ה-webhook (`?token=`). בלעדיו ה-webhook מחזיר 503 |
+| `WHATSAPP_GROUP_CHAT_ID` | אופציונלי — chat id של קבוצה (`…@g.us`) לשיחה דו-כיוונית **על מספר יחיד**. ראה למטה |
 | `ANTHROPIC_API_KEY` | מפעיל את מסלול Claude לשיחה חופשית. חסר → fallback למילות מפתח |
 | `ANTHROPIC_MODEL` | אופציונלי — override למודל (ברירת מחדל `claude-haiku-4-5-20251001`) |
 
@@ -76,8 +77,15 @@ flowchart TD
 > - `incomingMessageReceived` — הודעה שנשלחה **אל** ה-instance (setup עם מספר ייעודי: הבעלים כותב לבוט ממכשיר אחר).
 > - `outgoingMessageReceived` — הודעה שהבעלים הקליד **במכשיר עצמו** בצ'אט "הודעה לעצמי" (setup עם מספר יחיד — ה-instance **הוא** מספר הבעלים).
 >
-> `outgoingAPIMessageReceived` (התשובות שהבוט שולח דרך ה-API) **מסונן במפורש** כדי למנוע לולאת תגובות. בשני המקרים `senderData.chatId` נבדק מול `MY_WHATSAPP_CHAT_ID`.
+> `outgoingAPIMessageReceived` (התשובות שהבוט שולח דרך ה-API) **מסונן במפורש** כדי למנוע לולאת תגובות.
 > **בקונסולת Green API** יש להפעיל גם את התראות ההודעות היוצאות (`outgoingWebhook`) כדי ש-setup עם מספר יחיד יעבוד.
+
+> [!tip] שיחה דו-כיוונית על מספר יחיד — דרך קבוצה
+> ל-setup עם מספר יחיד (ה-instance **הוא** מספר הבעלים) יש מלכוד: צ'אט **"הודעה לעצמי"** של וואטסאפ **אינו** מפעיל שום webhook — גם כשהתראות ההודעות היוצאות דלוקות (אומת בפרודקשן). הפתרון בלי מספר שני: **קבוצת וואטסאפ**.
+> - קבוצה רגילה (גם קבוצה שבה הבעלים לבדו) **כן** מפעילה `outgoingMessageReceived` כשהבעלים מקליד בה במכשיר.
+> - מגדירים `WHATSAPP_GROUP_CHAT_ID` = ה-`…@g.us` של הקבוצה. אז ה-webhook מזהה בעלים בשני מסלולים: **צ'אט ישיר** (`senderData.chatId === MY_WHATSAPP_CHAT_ID`) **או קבוצה** (`chatId === WHATSAPP_GROUP_CHAT_ID` **וגם** `senderData.sender === MY_WHATSAPP_CHAT_ID`).
+> - הבוט עונה לתוך אותה קבוצה; תשובותיו חוזרות כ-`outgoingAPIMessageReceived` ומסוננות — אין לולאה.
+> - **איך משיגים את ה-group id:** יוצרים את הקבוצה, מקלידים בה הודעה, וקוראים את `senderData.chatId` מלוגי Vercel (ה-route מדפיס `WhatsApp ignored (not_owner)` עם ה-chatId כל עוד המשתנה עדיין לא מוגדר).
 
 ## קבצים
 
