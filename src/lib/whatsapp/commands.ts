@@ -52,53 +52,51 @@ async function findActiveTasksByText(query: string) {
   })
 }
 
-// ─── Entry point ────────────────────────────────────────────────────────────
+// ─── Executors ────────────────────────────────────────────────────────────────
+// Shared, side-effecting building blocks. Reused by both the keyword router
+// (handleIncomingMessage) and the Claude-driven path (ai.ts). Each returns the
+// Hebrew reply string to send back to the user.
 
-/**
- * Parses a free-text Hebrew WhatsApp message and performs the matching action.
- * Returns the reply text to send back to the user.
- */
-export async function handleIncomingMessage(text: string): Promise<string> {
-  const body = text.trim()
-  if (!body) return 'לא קיבלתי טקסט. שלחו "עזרה" לרשימת הפקודות.'
-
-  // Help
-  if (HELP_KEYWORDS.includes(body.toLowerCase())) return HELP_TEXT
-
-  // List today's tasks
-  if (LIST_KEYWORDS.includes(body)) return buildDailyDigest()
-
-  // Complete a task
-  const completeQuery = stripPrefix(body, COMPLETE_KEYWORDS)
-  if (completeQuery !== null) {
-    if (!completeQuery) return 'איזו משימה לסגור? כתבו: סגור <שם המשימה>'
-    const matches = await findActiveTasksByText(completeQuery)
-    if (matches.length === 0) return `לא מצאתי משימה פעילה שמכילה "${completeQuery}".`
-    if (matches.length > 1) {
-      return 'נמצאו כמה משימות — פרטו יותר:\n' + matches.map(t => `• ${t.title}`).join('\n')
-    }
-    await completeTask(matches[0].id)
-    return `✅ סומן כהושלם: ${matches[0].title}`
-  }
-
-  // Cancel a task
-  const cancelQuery = stripPrefix(body, CANCEL_KEYWORDS)
-  if (cancelQuery !== null) {
-    if (!cancelQuery) return 'איזו משימה לבטל? כתבו: בטל <שם המשימה>'
-    const matches = await findActiveTasksByText(cancelQuery)
-    if (matches.length === 0) return `לא מצאתי משימה פעילה שמכילה "${cancelQuery}".`
-    if (matches.length > 1) {
-      return 'נמצאו כמה משימות — פרטו יותר:\n' + matches.map(t => `• ${t.title}`).join('\n')
-    }
-    await updateTask(matches[0].id, { status: TaskStatus.CANCELLED })
-    return `🚫 בוטלה: ${matches[0].title}`
-  }
-
-  // Default → create a new task via the Hebrew Quick Add parser
-  return createTaskFromText(body)
+/** Today's open tasks, formatted as the daily digest. */
+export function listTodayText(): Promise<string> {
+  return buildDailyDigest()
 }
 
-// ─── Task creation (reuses the Quick Add parser) ──────────────────────────────
+/** Mark a single matching active task as completed. */
+export async function completeByQuery(query: string): Promise<string> {
+  const q = query.trim()
+  if (!q) return 'איזו משימה לסגור? כתבו: סגור <שם המשימה>'
+  const matches = await findActiveTasksByText(q)
+  if (matches.length === 0) return `לא מצאתי משימה פעילה שמכילה "${q}".`
+  if (matches.length > 1) {
+    return 'נמצאו כמה משימות — פרטו יותר:\n' + matches.map(t => `• ${t.title}`).join('\n')
+  }
+  await completeTask(matches[0].id)
+  return `✅ סומן כהושלם: ${matches[0].title}`
+}
+
+/** Cancel a single matching active task. */
+export async function cancelByQuery(query: string): Promise<string> {
+  const q = query.trim()
+  if (!q) return 'איזו משימה לבטל? כתבו: בטל <שם המשימה>'
+  const matches = await findActiveTasksByText(q)
+  if (matches.length === 0) return `לא מצאתי משימה פעילה שמכילה "${q}".`
+  if (matches.length > 1) {
+    return 'נמצאו כמה משימות — פרטו יותר:\n' + matches.map(t => `• ${t.title}`).join('\n')
+  }
+  await updateTask(matches[0].id, { status: TaskStatus.CANCELLED })
+  return `🚫 בוטלה: ${matches[0].title}`
+}
+
+export interface StructuredTask {
+  title: string
+  dueDate?: Date | null
+  dueHasTime?: boolean
+  plannedDate?: Date | null
+  priority?: Priority
+  projectName?: string
+  tagNames?: string[]
+}
 
 interface ProjectNode {
   id: string
@@ -114,44 +112,95 @@ function flattenProjects(nodes: ProjectNode[], out: { id: string; name: string }
   return out
 }
 
-async function createTaskFromText(text: string): Promise<string> {
-  const parsed = await parseQuickAdd(text)
+/**
+ * Create a task from an already-structured input (title, due date, priority,
+ * project + tag *names*). Resolves project/tag names to ids. Returns the
+ * confirmation reply.
+ */
+export async function createTaskStructured(input: StructuredTask): Promise<string> {
+  const title = input.title.trim()
+  if (!title) return 'לא הבנתי איזו משימה ליצור.'
+
+  const priority = input.priority ?? Priority.MEDIUM
 
   // Resolve project name → id
   let projectId: string | undefined
-  if (parsed.projectName) {
+  if (input.projectName) {
     const flat = flattenProjects((await getProjectTree()) as unknown as ProjectNode[])
-    projectId = flat.find(p => p.name.toLowerCase() === parsed.projectName!.toLowerCase())?.id
+    projectId = flat.find(p => p.name.toLowerCase() === input.projectName!.toLowerCase())?.id
   }
 
   // Resolve tag names → ids
   let tagIds: string[] = []
-  if (parsed.tagNames.length) {
+  if (input.tagNames?.length) {
     const allTags = await getTags()
-    tagIds = parsed.tagNames
+    tagIds = input.tagNames
       .map(name => allTags.find(t => t.name.toLowerCase() === name.toLowerCase())?.id)
       .filter(Boolean) as string[]
   }
 
   await createTask({
+    title,
+    priority,
+    dueDate: input.dueDate ?? null,
+    dueHasTime: input.dueHasTime ?? false,
+    plannedDate: input.plannedDate ?? null,
+    projectId,
+    tagIds,
+  })
+
+  const bits: string[] = [`✅ נוספה משימה: ${title}`]
+  if (input.dueDate) {
+    bits.push(
+      input.dueHasTime
+        ? `🗓️ ${format(input.dueDate, "dd/MM 'בשעה' HH:mm", { locale: he })}`
+        : `🗓️ ${format(input.dueDate, 'dd/MM/yyyy', { locale: he })}`
+    )
+  }
+  if (priority !== Priority.MEDIUM) bits.push(`עדיפות: ${PRIORITY_LABELS[priority]}`)
+  if (input.projectName) bits.push(`#${input.projectName}`)
+  return bits.join('\n')
+}
+
+/** Create a task from free text via the Hebrew Quick Add parser. */
+async function createTaskFromText(text: string): Promise<string> {
+  const parsed = await parseQuickAdd(text)
+  return createTaskStructured({
     title: parsed.title,
     priority: parsed.priority,
     dueDate: parsed.dueDate ?? null,
     dueHasTime: parsed.dueHasTime,
     plannedDate: parsed.plannedDate ?? null,
-    projectId,
-    tagIds,
+    projectName: parsed.projectName,
+    tagNames: parsed.tagNames,
   })
+}
 
-  const bits: string[] = [`✅ נוספה משימה: ${parsed.title}`]
-  if (parsed.dueDate) {
-    bits.push(
-      parsed.dueHasTime
-        ? `🗓️ ${format(parsed.dueDate, "dd/MM 'בשעה' HH:mm", { locale: he })}`
-        : `🗓️ ${format(parsed.dueDate, 'dd/MM/yyyy', { locale: he })}`
-    )
-  }
-  if (parsed.priority !== Priority.MEDIUM) bits.push(`עדיפות: ${PRIORITY_LABELS[parsed.priority]}`)
-  if (parsed.projectName) bits.push(`#${parsed.projectName}`)
-  return bits.join('\n')
+// ─── Keyword router (fallback when Claude is not configured) ──────────────────
+
+/**
+ * Parses a free-text Hebrew WhatsApp message using keyword heuristics and
+ * performs the matching action. Used as a fallback when ANTHROPIC_API_KEY is
+ * absent (see respond.ts). Returns the reply text to send back to the user.
+ */
+export async function handleIncomingMessage(text: string): Promise<string> {
+  const body = text.trim()
+  if (!body) return 'לא קיבלתי טקסט. שלחו "עזרה" לרשימת הפקודות.'
+
+  // Help
+  if (HELP_KEYWORDS.includes(body.toLowerCase())) return HELP_TEXT
+
+  // List today's tasks
+  if (LIST_KEYWORDS.includes(body)) return listTodayText()
+
+  // Complete a task
+  const completeQuery = stripPrefix(body, COMPLETE_KEYWORDS)
+  if (completeQuery !== null) return completeByQuery(completeQuery)
+
+  // Cancel a task
+  const cancelQuery = stripPrefix(body, CANCEL_KEYWORDS)
+  if (cancelQuery !== null) return cancelByQuery(cancelQuery)
+
+  // Default → create a new task via the Hebrew Quick Add parser
+  return createTaskFromText(body)
 }
