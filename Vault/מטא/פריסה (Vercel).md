@@ -65,7 +65,7 @@ tags:
 | `CRON_SECRET` | ידני — מפעיל את הגנת ה-cron |
 | `WHATSAPP_WEBHOOK_TOKEN` | ידני — **חובה** להפעלת ה-webhook (בלעדיו 503) |
 | `ANTHROPIC_API_KEY` | ידני — שיחה חופשית עם Claude (חסר → fallback מילות מפתח) |
-| `ANTHROPIC_MODEL` | אופציונלי (ברירת מחדל `claude-3-5-haiku-latest`) |
+| `ANTHROPIC_MODEL` | אופציונלי (ברירת מחדל `claude-haiku-4-5-20251001`) |
 
 > [!warning] אבטחה
 > אין להכניס סודות ל-`vercel.json` (מקומיט). ה-`CRON_SECRET` נמסר ל-cron דרך header אוטומטי, לא דרך ה-URL.

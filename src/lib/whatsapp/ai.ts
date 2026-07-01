@@ -5,7 +5,7 @@
 //
 // Config lives in .env (never committed):
 //   ANTHROPIC_API_KEY  – required to enable the AI path
-//   ANTHROPIC_MODEL    – optional, defaults to claude-3-5-haiku-latest
+//   ANTHROPIC_MODEL    – optional, defaults to claude-haiku-4-5-20251001
 
 import { format } from 'date-fns'
 import { he } from 'date-fns/locale'
@@ -18,7 +18,7 @@ import {
 } from './commands'
 
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages'
-const DEFAULT_MODEL = 'claude-3-5-haiku-latest'
+const DEFAULT_MODEL = 'claude-haiku-4-5-20251001'
 
 /** True when the Claude API key is present. */
 export function isAiConfigured(): boolean {

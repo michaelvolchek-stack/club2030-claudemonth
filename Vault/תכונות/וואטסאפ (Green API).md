@@ -62,7 +62,7 @@ flowchart TD
 | `CRON_SECRET` | סוד המגן על route הדייג'סט |
 | `WHATSAPP_WEBHOOK_TOKEN` | **חובה** — סוד ב-URL של ה-webhook (`?token=`). בלעדיו ה-webhook מחזיר 503 |
 | `ANTHROPIC_API_KEY` | מפעיל את מסלול Claude לשיחה חופשית. חסר → fallback למילות מפתח |
-| `ANTHROPIC_MODEL` | אופציונלי — override למודל (ברירת מחדל `claude-3-5-haiku-latest`) |
+| `ANTHROPIC_MODEL` | אופציונלי — override למודל (ברירת מחדל `claude-haiku-4-5-20251001`) |
 
 > [!warning] אבטחה
 > ה-`.env` מוחרג מה-repository. אין לחשוף ערכי משתנים בתיעוד/לוגים/קומיט.
