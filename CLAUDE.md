@@ -20,7 +20,8 @@ npx prisma generate  # רגנרציה של Prisma client
 | שכבה | טכנולוגיה |
 |------|-----------|
 | Framework | Next.js 14 App Router |
-| DB | SQLite via Prisma 5 |
+| DB | PostgreSQL (Vercel/Neon) via Prisma 5 |
+| Deploy | Vercel + Vercel Cron (דייג'סט יומי) |
 | Styling | Tailwind CSS + shadcn/ui (Base UI) |
 | Language | TypeScript (strict) |
 | RTL | Hebrew, `dir="rtl"` on `<html>` |
@@ -49,8 +50,11 @@ npx prisma generate  # רגנרציה של Prisma client
 
 ## דפוסים חשובים (gotchas — לא נגזרים מהקוד)
 
-### SQLite + Prisma 5 — אין enum
-שדות ה-enum הם `String` ב-DB, עם תבנית `as const` ב-`src/types/index.ts`.
+### enum כ-String + תבנית `as const`
+שדות ה-enum (`status`, `priority`) הם `String` ב-DB — לא Prisma enum — עם תבנית `as const` ב-`src/types/index.ts`. הדפוס נשמר גם אחרי המעבר ל-PostgreSQL כדי לא לשבור טיפוסים קיימים.
+
+### PostgreSQL על Vercel (serverless)
+ה-schema משתמש ב-`POSTGRES_PRISMA_URL` (pooled, ל-app) ו-`POSTGRES_URL_NON_POOLING` (`directUrl`, למיגרציות) — שני משתנים ש-Vercel Postgres מזריק אוטומטית. פיתוח מקומי: `vercel env pull .env`. פרטים ב-`Vault/מטא/פריסה (Vercel).md`.
 
 ### Server Actions בclient components
 ```ts

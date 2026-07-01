@@ -8,7 +8,6 @@ export default defineConfig({
   migrations: {
     path: "prisma/migrations",
   },
-  datasource: {
-    url: process.env["DATABASE_URL"],
-  },
+  // datasource url/directUrl are read from schema.prisma (env POSTGRES_PRISMA_URL /
+  // POSTGRES_URL_NON_POOLING) so the CLI and the app stay in sync.
 });

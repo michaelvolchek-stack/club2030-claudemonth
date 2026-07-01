@@ -8,6 +8,9 @@ import {
   Flame,
 } from 'lucide-react'
 
+// Personal, DB-backed data — render on demand, never prerender at build.
+export const dynamic = 'force-dynamic'
+
 export default async function DashboardPage() {
   const data = await getDashboardData()
 
