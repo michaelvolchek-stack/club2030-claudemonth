@@ -1,5 +1,9 @@
 # CLAUDE.md — מערכת ניהול משימות אישית
 
+> קובץ זה נטען בכל סשן — הוא מכיל רק מה שתמידי ולא-נגזר מהקוד.
+> תיעוד מלא (ארכיטקטורה, מודל נתונים, פיצ'רים) חי ב-`Vault/` והוא **מקור-האמת היחיד**.
+> לפני עבודה על נושא ספציפי, קרא את ה-note הרלוונטי שם.
+
 ## פקודות בסיסיות
 
 ```bash
@@ -21,99 +25,32 @@ npx prisma generate  # רגנרציה של Prisma client
 | Language | TypeScript (strict) |
 | RTL | Hebrew, `dir="rtl"` on `<html>` |
 
-## מבנה תיקיות
+## מפת קוד (התמצאות מהירה)
 
-```
-src/
-├── app/
-│   ├── layout.tsx              ← root layout (RTL, fonts, Toaster)
-│   └── (app)/
-│       ├── layout.tsx          ← fetches project tree, wraps in AppShell
-│       ├── today/page.tsx      ← מתוכנן / יעד / overdue
-│       ├── week/page.tsx       ← 7 ימים + overdue
-│       ├── all/page.tsx        ← FilterBar + SortMenu (URL params)
-│       ├── search/page.tsx     ← חיפוש live + highlight
-│       └── project/[id]/page.tsx
-├── components/
-│   ├── AppShell.tsx            ← layout wrapper, keyboard shortcuts, mobile sidebar
-│   ├── Sidebar.tsx             ← ניווט + ProjectTree + TagManager
-│   ├── ProjectTree.tsx         ← עץ פרויקטים עם edit/delete hover
-│   ├── ProjectDialog.tsx       ← create/edit project dialog
-│   ├── ProjectHeader.tsx       ← כותרת עמוד פרויקט עם edit/delete
-│   ├── TagManager.tsx          ← ניהול תגיות (dialog)
-│   ├── TagSelector.tsx         ← multi-select תגיות בפאנל
-│   ├── TaskViewClient.tsx      ← shared task list view (today/week)
-│   ├── AllViewClient.tsx       ← /all עם FilterBar + SortMenu
-│   ├── SearchViewClient.tsx    ← /search עם debounce + highlight
-│   ├── TaskList.tsx            ← רשימת משימות
-│   ├── TaskItem.tsx            ← שורת משימה
-│   ├── TaskPanel.tsx           ← side-sheet עריכה מלאה
-│   ├── QuickAddBar.tsx         ← Quick Add עם NLP preview
-│   ├── DateTimePicker.tsx      ← calendar popover + time toggle
-│   └── ui/                     ← shadcn components
-├── lib/
-│   ├── prisma.ts               ← singleton PrismaClient
-│   └── actions/
-│       ├── tasks.ts            ← CRUD + getTodayTasks/getWeekTasks/searchTasks
-│       ├── projects.ts         ← CRUD + getProjectTree
-│       ├── tags.ts             ← CRUD
-│       ├── subtasks.ts         ← add/toggle/delete
-│       └── quickAdd.ts         ← Hebrew NLP parser
-└── types/
-    └── index.ts                ← TaskStatus, Priority, TaskWithRelations, ...
-```
+- `src/app/(app)/` — דפים: `today` `week` `all` `search` `dashboard` `project/[id]`
+- `src/components/` — רכיבי UI (`ui/` = shadcn); לוגיקת layout ב-`AppShell.tsx`
+- `src/lib/actions/` — Server Actions: `tasks` `projects` `tags` `subtasks` `quickAdd` `dashboard`
+- `src/types/index.ts` — `TaskStatus`, `Priority`, `TaskWithRelations` (תבנית `as const`)
 
-## Quick Add — פורמט
+> את העץ המלא והתפקיד של כל רכיב ראה ב-`Vault/ארכיטקטורה/`. אל תשכפל אותו לכאן — הוא מתיישן.
 
-```
-"כותרת [תאריך] [!עדיפות] [#פרויקט] [@תגית] [~תכנון]"
-```
+## נושאים בעומק — ב-Vault
 
-| Token | משמעות | דוגמה |
-|-------|--------|-------|
-| `!1` | דחוף | `!1` |
-| `!2` | גבוה | `!2` |
-| `!3` | בינוני (ברירת מחדל) | `!3` |
-| `!4` | נמוך | `!4` |
-| `#name` | פרויקט | `#עבודה` |
-| `@name` | תגית | `@פגישות` |
-| `~date` | תאריך תכנון | `~היום` |
-| `מחר` / `היום` / `מחרתיים` | תאריך יעד | `מחר` |
-| `בעוד שבוע` / `בעוד 3 ימים` | יחסי | `בעוד שבוע` |
-| `ביום שני` | יום בשבוע | `ביום שני` |
-| `ב-15/6` | תאריך מוחלט | `ב-15/6` |
-| `בבוקר` / `בצהריים` / `בערב` / `בלילה` | שעה | `בבוקר` → 09:00 |
-| `HH:MM` | שעה מפורשת | `14:30` |
+| נושא | note |
+|------|------|
+| ארכיטקטורה כללית | `Vault/ארכיטקטורה/סקירת ארכיטקטורה.md` |
+| מודל נתונים + מיגרציות | `Vault/ארכיטקטורה/מודל נתונים.md` |
+| Server Actions | `Vault/ארכיטקטורה/Server Actions.md` |
+| רכיבים ותפקידם | `Vault/ארכיטקטורה/רכיבים.md` |
+| דפים וניווט + קיצורי מקלדת | `Vault/ארכיטקטורה/דפים וניווט.md` |
+| Quick Add (פורמט + כל הטוקנים) | `Vault/תכונות/Quick Add.md` |
+| משימות חוזרות | `Vault/תכונות/משימות חוזרות.md` |
+| חיפוש וסינון | `Vault/תכונות/חיפוש וסינון.md` |
 
-**דוגמאות:**
-```
-"לפגוש יעל מחר בבוקר !1 #עבודה @פגישות"
-"לשלם חשבון !2 ב-5 ביוני"
-"לכתוב דוח בעוד שבוע #עבודה ~מחר"
-```
+## דפוסים חשובים (gotchas — לא נגזרים מהקוד)
 
-## Keyboard Shortcuts
-
-| מקש | פעולה |
-|-----|-------|
-| `N` | פוקוס על Quick Add |
-| `Escape` | סגירת פאנל / חיפוש / Quick Add |
-
-## מודל DB
-
-```prisma
-Task        — id, title, status, priority, dueDate, dueHasTime, plannedDate,
-              isRecurring, recurringRule (JSON), projectId, parentTaskId
-Project     — id, name, color, parentId (self-relation היררכיה)
-Tag         — id, name, color
-TaskTag     — taskId, tagId (junction)
-SubTask     — id, taskId, title, completed, order
-TaskHistory — id, taskId, field, oldValue, newValue, changedAt
-```
-
-> **SQLite + Prisma 5:** אין enum support → שדות `String` עם TypeScript `as const` pattern.
-
-## דפוסים חשובים
+### SQLite + Prisma 5 — אין enum
+שדות ה-enum הם `String` ב-DB, עם תבנית `as const` ב-`src/types/index.ts`.
 
 ### Server Actions בclient components
 ```ts
@@ -142,3 +79,8 @@ const selectedTask = allTasks.find(t => t.id === selectedTaskId) ?? null
 // next.config.mjs — חבילות ESM-only צריכות transpile
 transpilePackages: ['react-day-picker']
 ```
+
+## סנכרון תיעוד
+
+שינוי ב-`src/` או `prisma/` שמשפיע על ארכיטקטורה/מודל/פיצ'רים — עדכן את ה-note המתאים ב-`Vault/`.
+משימה זו מתאימה לסאב-אג'נט `vault-doc-sync` (ראה `.claude/agents/`).
