@@ -71,6 +71,14 @@ flowchart TD
 > 1. **טוקן סודי (`?token=`)** — נבדק מול `WHATSAPP_WEBHOOK_TOKEN`. אם המשתנה לא מוגדר, ה-route דוחה הכול (503) כדי למנוע webhook לא-מאומת בפריסה שגויה.
 > 2. **אימות שולח** — רק `chatId` השווה ל-`MY_WHATSAPP_CHAT_ID` מטופל; הודעה עם טוקן תקין ממספר אחר מסוננת (`not_owner`).
 
+> [!note] סוגי webhook שמטופלים (single-number vs dedicated)
+> ה-route מטפל בשני סוגי notification (`HANDLED_TYPES`):
+> - `incomingMessageReceived` — הודעה שנשלחה **אל** ה-instance (setup עם מספר ייעודי: הבעלים כותב לבוט ממכשיר אחר).
+> - `outgoingMessageReceived` — הודעה שהבעלים הקליד **במכשיר עצמו** בצ'אט "הודעה לעצמי" (setup עם מספר יחיד — ה-instance **הוא** מספר הבעלים).
+>
+> `outgoingAPIMessageReceived` (התשובות שהבוט שולח דרך ה-API) **מסונן במפורש** כדי למנוע לולאת תגובות. בשני המקרים `senderData.chatId` נבדק מול `MY_WHATSAPP_CHAT_ID`.
+> **בקונסולת Green API** יש להפעיל גם את התראות ההודעות היוצאות (`outgoingWebhook`) כדי ש-setup עם מספר יחיד יעבוד.
+
 ## קבצים
 
 | קובץ | תפקיד |

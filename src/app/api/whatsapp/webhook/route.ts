@@ -5,7 +5,7 @@ import { greenApiConfig, sendWhatsAppMessage } from '@/lib/whatsapp/client'
 
 export const dynamic = 'force-dynamic'
 
-// Shape of the Green API "incomingMessageReceived" webhook payload (subset).
+// Shape of the Green API webhook payload (subset).
 // Docs: https://green-api.com/en/docs/api/receiving/notifications-format/
 interface GreenNotification {
   typeWebhook?: string
@@ -16,6 +16,16 @@ interface GreenNotification {
     extendedTextMessageData?: { text?: string }
   }
 }
+
+// Webhook types we act on:
+//   incomingMessageReceived  – a message sent *to* the instance (dedicated-number
+//                              setups: the owner texts the bot from their phone).
+//   outgoingMessageReceived  – a message the owner typed *on the device* in their
+//                              own "Message Yourself" chat (single-number setups,
+//                              where the instance IS the owner's number).
+// We deliberately DO NOT handle `outgoingAPIMessageReceived` — those are the
+// bot's own replies (sent via the API); processing them would create a loop.
+const HANDLED_TYPES = new Set(['incomingMessageReceived', 'outgoingMessageReceived'])
 
 function extractText(n: GreenNotification): string | null {
   const md = n.messageData
@@ -43,8 +53,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, ignored: 'bad_json' })
   }
 
-  // Only act on inbound text messages.
-  if (payload.typeWebhook !== 'incomingMessageReceived') {
+  // Only act on user-authored text messages (incoming, or self-chat outgoing).
+  // Ignoring outgoingAPIMessageReceived here is what prevents a reply loop.
+  if (!HANDLED_TYPES.has(payload.typeWebhook ?? '')) {
     return NextResponse.json({ ok: true, ignored: payload.typeWebhook ?? 'unknown' })
   }
 
@@ -52,9 +63,9 @@ export async function POST(req: Request) {
   const text = extractText(payload)
   const { chatId: ownerChatId } = greenApiConfig()
 
-  // Security layer 2 — sender verification. Single-user app: only respond to
-  // the configured owner number, so even a valid-token webhook carrying someone
-  // else's message is ignored.
+  // Security layer 2 — sender/chat verification. Single-user app: only act on
+  // the configured owner number. For incoming this is the sender; for self-chat
+  // outgoing this is the (self) recipient — both surface as senderData.chatId.
   if (!ownerChatId || chatId !== ownerChatId) {
     return NextResponse.json({ ok: true, ignored: 'not_owner' })
   }
