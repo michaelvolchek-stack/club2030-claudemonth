@@ -8,8 +8,9 @@ import { ProjectWithChildren } from '@/types'
 import { ProjectTree } from './ProjectTree'
 import { ProjectDialog } from './ProjectDialog'
 import { TagManager } from './TagManager'
-import { CalendarDays, CalendarRange, List, Search, Plus, Tags, X, BarChart2 } from 'lucide-react'
+import { CalendarDays, CalendarRange, List, Search, Plus, Tags, X, BarChart2, LogOut } from 'lucide-react'
 import { deleteProject } from '@/lib/actions/projects'
+import { logout } from '@/lib/actions/auth'
 import { toast } from 'sonner'
 import {
   AlertDialog,
@@ -140,6 +141,17 @@ export function Sidebar({ projects, onClose }: SidebarProps) {
             ניהול תגיות
           </button>
         </div>
+
+        {/* Logout */}
+        <form action={logout} className="px-4 py-3 border-t">
+          <button
+            type="submit"
+            className="flex items-center gap-2 w-full text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <LogOut className="h-4 w-4 shrink-0" />
+            התנתקות
+          </button>
+        </form>
       </aside>
 
       {/* Create / Edit project dialog */}

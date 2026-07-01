@@ -51,6 +51,16 @@ tags:
 
 `getDashboardData()` → `DashboardData` (סטטיסטיקות). ראה [[Dashboard]].
 
+## `auth.ts` — אימות משתמש
+
+| פעולה | תיאור |
+|-------|-------|
+| `login(prevState, formData)` | מאמת מול `APP_USERNAME` / `APP_PASSWORD` ב-.env; מציב cookie `tm_session` (httpOnly); מפנה ל-`/today` בהצלחה |
+| `logout()` | מוחק את ה-cookie `tm_session`; מפנה ל-`/login` |
+
+> [!info] ספריית העזר `src/lib/auth.ts`
+> כוללת: `createSessionToken` / `verifySessionToken` (HMAC-SHA256, Web Crypto — תואם edge ו-node) ו-`credentialsValid`. הקבועים `SESSION_COOKIE='tm_session'` ו-`SESSION_MAX_AGE` מוגדרים שם. ראה [[התחברות]] לפירוט מלא.
+
 > [!warning] revalidatePath
 > פעולות כתיבה מרעננות במפורש את `/all`, `/today`, `/week` (ולא `'/', 'layout'`). ראה [[סקירת ארכיטקטורה#revalidatePath — דפוס חשוב]].
 
