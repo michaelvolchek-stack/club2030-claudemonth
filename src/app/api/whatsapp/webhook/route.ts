@@ -77,8 +77,16 @@ export async function POST(req: Request) {
   //       the same group; its own API replies arrive as
   //       outgoingAPIMessageReceived and are filtered above, so no loop.
   const isOwnerDirect = Boolean(ownerChatId) && chatId === ownerChatId
+  // Group path: an outgoingMessageReceived is by definition a message the owner's
+  // own account sent from a device, so membership in the dedicated group is proof
+  // enough of authorship — we do NOT require sender===owner (WhatsApp groups may
+  // report the sender as a privacy id / @lid rather than the @c.us number, which
+  // would wrongly reject the owner's own message). For a group *incoming* message
+  // (someone else posting) we still require the sender to be the owner.
   const isOwnerGroup =
-    Boolean(groupChatId) && chatId === groupChatId && sender === ownerChatId
+    Boolean(groupChatId) &&
+    chatId === groupChatId &&
+    (payload.typeWebhook === 'outgoingMessageReceived' || sender === ownerChatId)
   if (!isOwnerDirect && !isOwnerGroup) {
     // Not secret — helps read the group id from logs during first-time setup.
     console.log('WhatsApp ignored (not_owner):', {
