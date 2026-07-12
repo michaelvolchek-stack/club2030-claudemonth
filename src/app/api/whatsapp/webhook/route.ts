@@ -9,6 +9,7 @@ export const dynamic = 'force-dynamic'
 // Docs: https://green-api.com/en/docs/api/receiving/notifications-format/
 interface GreenNotification {
   typeWebhook?: string
+  quotaData?: { status?: string; description?: string }
   senderData?: { chatId?: string; sender?: string; senderName?: string }
   messageData?: {
     typeMessage?: string
@@ -56,6 +57,16 @@ export async function POST(req: Request) {
   // Only act on user-authored text messages (incoming, or self-chat outgoing).
   // Ignoring outgoingAPIMessageReceived here is what prevents a reply loop.
   if (!HANDLED_TYPES.has(payload.typeWebhook ?? '')) {
+    if (payload.typeWebhook === 'quotaExceeded') {
+      // Green API free plan: the monthly correspondents quota was exceeded, so
+      // real messages are replaced by this notification and the two-way chat
+      // silently dies. Surface it loudly in the Vercel logs.
+      console.warn(
+        `whatsapp webhook: quotaExceeded — ${payload.quotaData?.description ?? 'no description'}`
+      )
+    } else {
+      console.log(`whatsapp webhook: ignoring typeWebhook=${payload.typeWebhook ?? 'unknown'}`)
+    }
     return NextResponse.json({ ok: true, ignored: payload.typeWebhook ?? 'unknown' })
   }
 
