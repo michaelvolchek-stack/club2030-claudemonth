@@ -86,6 +86,13 @@ flowchart TD
 > - מגדירים `WHATSAPP_GROUP_CHAT_ID` = ה-`…@g.us` של הקבוצה. אז ה-webhook מזהה בעלים בשני מסלולים: **צ'אט ישיר** (`senderData.chatId === MY_WHATSAPP_CHAT_ID`) **או קבוצה** (`chatId === WHATSAPP_GROUP_CHAT_ID` **וגם** `senderData.sender === MY_WHATSAPP_CHAT_ID`).
 > - הבוט עונה לתוך אותה קבוצה; תשובותיו חוזרות כ-`outgoingAPIMessageReceived` ומסוננות — אין לולאה.
 > - **איך משיגים את ה-group id:** יוצרים את הקבוצה, מקלידים בה הודעה, וקוראים את `senderData.chatId` מלוגי Vercel (ה-route מדפיס `WhatsApp ignored (not_owner)` עם ה-chatId כל עוד המשתנה עדיין לא מוגדר).
+> - **בפרודקשן חייב ערך לא-ריק:** ה-route בודק `Boolean(groupChatId)` — משתנה ריק (או חסר) מכבה את מסלול הקבוצה וכל הודעות הקבוצה נדחות כ-`not_owner`. אחרי עדכון המשתנה ב-Vercel נדרש redeploy.
+
+> [!danger] מכסת correspondents בתוכנית החינמית (Developer)
+> התוכנית החינמית של Green API מוגבלת ל-**3 correspondents** (צ'אטים שונים) **בחודש**. שליחה לכל chatId רביעי נכשלת עם **HTTP 466** (`CORRESPONDENTS_QUOTE_EXCEEDED`).
+> - **קבוצה חדשה = correspondent חדש.** אם המכסה כבר מלאה, הבוט לא יוכל לענות לתוך קבוצה שנוצרה עכשיו — גם אם ה-webhook הנכנס עובד מצוין.
+> - **הכשל שקט מבחינת המשתמש:** ה-webhook עוטף את שליחת התשובה ב-`try/catch` שרק מדפיס `console.error('WhatsApp reply failed')` ומחזיר `ok: true`. ההודעה הנכנסת מעובדת, אבל שום תשובה לא מגיעה — והשגיאה נראית **רק בלוגים של Vercel**.
+> - **פתרון:** להישאר עם אותם צ'אטים קיימים לאורך החודש (לא ליצור קבוצות/צ'אטים חדשים), או לשדרג לתוכנית Business.
 
 ## קבצים
 
